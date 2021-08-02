@@ -5,7 +5,13 @@ const app = express();
 const auth = require("./utilities/auth");
 
 const { getAllScreams, postOneScream } = require("./routes/screams");
-const { signup, login, uploadImage } = require("./routes/users");
+const {
+  signup,
+  login,
+  uploadImage,
+  addUserDetails,
+  getUserDetails,
+} = require("./routes/users");
 
 //Scream routes
 app.get("/screams", getAllScreams);
@@ -21,5 +27,10 @@ app.post("/login", login);
 
 //Upload User Image
 app.post("/user/image", auth, uploadImage);
+
+//Adding User Details
+app.post("/user", auth, addUserDetails);
+
+app.get("/user", auth, getUserDetails);
 
 exports.api = functions.region("us-east4").https.onRequest(app);
