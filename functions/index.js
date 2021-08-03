@@ -4,7 +4,12 @@ const app = express();
 
 const auth = require("./utilities/auth");
 
-const { getAllScreams, postOneScream } = require("./routes/screams");
+const {
+  getAllScreams,
+  postOneScream,
+  getScream,
+  commentOnScream,
+} = require("./routes/screams");
 const {
   signup,
   login,
@@ -18,6 +23,18 @@ app.get("/screams", getAllScreams);
 
 //Creating documents
 app.post("/scream", auth, postOneScream);
+
+//
+app.get("/scream/:screamId", getScream);
+
+//Delete Scream
+
+//Like Scream
+
+//Unlike Scream
+
+//Comment Scream
+app.post("/scream/:screamId/comment", auth, commentOnScream);
 
 //User Registration
 app.post("/signup", signup);
