@@ -9,6 +9,8 @@ const {
   postOneScream,
   getScream,
   commentOnScream,
+  likeScream,
+  unlikeScream,
 } = require("./routes/screams");
 const {
   signup,
@@ -30,8 +32,10 @@ app.get("/scream/:screamId", getScream);
 //Delete Scream
 
 //Like Scream
+app.get("/scream/:screamId/like", auth, likeScream);
 
 //Unlike Scream
+app.get("/scream/:screamId/unlike", auth, unlikeScream);
 
 //Comment Scream
 app.post("/scream/:screamId/comment", auth, commentOnScream);
