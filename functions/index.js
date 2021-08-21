@@ -132,3 +132,61 @@ exports.createNotificationOnComment = functions
         return;
       });
   });
+
+//Trigger to change all of the user's image on screams
+exports.onUserImageChange = functions
+  .region("northamerica-northeast1")
+  .firestore.document("/users/{userId}")
+  .onUpdate((change) => {
+    console.log(change.before.data());
+    console.log(change.after.data());
+    const batch = db.batch();
+    if (change.before.data().imageUrl !== change.after.data().imageUrl) {
+      return db
+        .collection("screams")
+        .where("userHandle", "==", change.before.data().handle)
+        .get()
+        .then((data) => {
+          data.forEach((doc) => {
+            const scream = db.doc(`/screams/${doc.id}`);
+            batch.update(scream, { userImage: change.after().imageUrl });
+          });
+          return batch.commit();
+        });
+    } else return true;
+  });
+
+//Delete all notifications related to deleted scream
+exports.onScreamDelete = functions
+  .region("northamerica-northeast1")
+  .firestore.document("/screams/{screamId}")
+  .onDelete((snapshot, context) => {
+    const screamId = context.params.screamId;
+    const batch = db.batch();
+    return db
+      .collection("comments")
+      .where("screamId", "==", screamId)
+      .get()
+      .then((data) => {
+        data.forEach((doc) => {
+          batch.delete(db.doc(`/comments/${doc.id}`));
+        });
+        return db.collection("likes").where("screamId", "==", screamId).get();
+      })
+      .then((data) => {
+        data.forEach((doc) => {
+          batch.delete(db.doc(`/likes/${doc.id}`));
+        });
+        return db
+          .collection("notifications")
+          .where("screamId", "==", screamId)
+          .get();
+      })
+      .then((data) => {
+        data.forEach((doc) => {
+          batch.delete(db.doc(`/notifications/${doc.id}`));
+        });
+        return batch.commit();
+      })
+      .catch((err) => console.error(err));
+  });
