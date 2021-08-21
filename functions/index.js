@@ -4,6 +4,8 @@ const app = express();
 
 const auth = require("./utilities/auth");
 
+const { db } = require("./utilities/admin");
+
 const {
   getAllScreams,
   postOneScream,
@@ -18,7 +20,9 @@ const {
   login,
   uploadImage,
   addUserDetails,
+  getAuthenticatedUserDetails,
   getUserDetails,
+  markNotificationsRead,
 } = require("./routes/users");
 
 //Scream routes
@@ -27,7 +31,7 @@ app.get("/screams", getAllScreams);
 //Creating documents
 app.post("/scream", auth, postOneScream);
 
-//
+//Get Scream
 app.get("/scream/:screamId", getScream);
 
 //Delete Scream
@@ -54,6 +58,77 @@ app.post("/user/image", auth, uploadImage);
 //Adding User Details
 app.post("/user", auth, addUserDetails);
 
-app.get("/user", auth, getUserDetails);
+//Get Authenticated User
+app.get("/user", auth, getAuthenticatedUserDetails);
 
-exports.api = functions.region("us-east4").https.onRequest(app);
+//Get User Details
+app.get("/user/:handle", auth, getUserDetails);
+
+//Read Notifications
+app.post("/notifications", auth, markNotificationsRead);
+
+exports.api = functions.region("northamerica-northeast1").https.onRequest(app);
+
+exports.createNotificationOnLike = functions
+  .region("northamerica-northeast1")
+  .firestore.document("likes/{id}")
+  .onCreate((snapshot) => {
+    return db
+      .doc(`/screams/${snapshot.data().screamId}`)
+      .get()
+      .then((doc) => {
+        if (
+          doc.exists &&
+          doc.data().userHandle !== snapshot.data().userHandle
+        ) {
+          return db.doc(`/notifications/${snapshot.id}`).set({
+            createdAt: new Date().toISOString(),
+            recipient: doc.data().userHandle,
+            sender: snapshot.data().userHandle,
+            type: "like",
+            read: false,
+            screamId: doc.id,
+          });
+        }
+      })
+      .catch((err) => console.error(err));
+  });
+exports.deleteNotificationOnUnLike = functions
+  .region("northamerica-northeast1")
+  .firestore.document("likes/{id}")
+  .onDelete((snapshot) => {
+    return db
+      .doc(`/notifications/${snapshot.id}`)
+      .delete()
+      .catch((err) => {
+        console.error(err);
+        return;
+      });
+  });
+exports.createNotificationOnComment = functions
+  .region("northamerica-northeast1")
+  .firestore.document("comments/{id}")
+  .onCreate((snapshot) => {
+    return db
+      .doc(`/screams/${snapshot.data().screamId}`)
+      .get()
+      .then((doc) => {
+        if (
+          doc.exists &&
+          doc.data().userHandle !== snapshot.data().userHandle
+        ) {
+          return db.doc(`/notifications/${snapshot.id}`).set({
+            createdAt: new Date().toISOString(),
+            recipient: doc.data().userHandle,
+            sender: snapshot.data().userHandle,
+            type: "comment",
+            read: false,
+            screamId: doc.id,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        return;
+      });
+  });

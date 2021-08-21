@@ -1,6 +1,6 @@
-const {
-  exampleUserRecord,
-} = require("firebase-functions-test/lib/providers/auth");
+// const {
+//   exampleUserRecord,
+// } = require("firebase-functions-test/lib/providers/auth");
 const { db } = require("../utilities/admin");
 
 exports.getAllScreams = (req, res) => {
